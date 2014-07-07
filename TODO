@@ -1,0 +1,30 @@
+-Test cdpatch and ensure it works
+-Finalize some kind of utility for patching AR
+-Finish adding cheats game list menu:
+ -I already have a basic gui started
+ -Game List is being fetched and displayed.
+ -Cheat List is being fetched and displayed. 
+ -Codes list still needs to be added.
+ -Selected cheats should be highlighted.
+ -Add ability to add/edit cheats
+ -Add ability to add/edit games(and master code)
+ -Add ability to delete cheats
+ -Add ability to delete games
+ -Allow user to enable commlink communication when using cheats
+ -games and title need to be center aligned.
+ 
+-Add individual games' cheat list menu.
+-Add the hook code.
+-Implement splash screen
+-Add support for vcd's(don't check region)
+
+DONE: -Add support for audio cd's(use bios's cd player)
+DONE: -Finish coding bup hijack code.
+DONE: -Write bup hijack windows-end utility.
+-Consider adding my toolkit I wrote a while back
+-Add a short cut that keeps the program from booting the disc and instead goes
+ to some kind of menu
+-Remote debugging of games(first UBC's breakpoint for communication, second for actual breakpoints. Any additional breakpoints can be done via modified instructions and using illegal instruction exceptions)
+-Local debugging of games(should be a lot easier to implement. Use VDP1 for display)
+-Add virtual cd support(fetch data from commlink instead of cd block). Might be easiest to latch onto the GFS library.
+-Finish Implementing cd patcher
