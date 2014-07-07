@@ -1,1 +1,9 @@
 build
+
+pseudosaturn.sln
+pseudosaturn.sdf
+pseudosaturn.suo
+*.user
+pseudosaturn.vcxproj.filters
+pseudosaturn.vcxproj
+run.bat
