@@ -7,3 +7,6 @@ pseudosaturn.suo
 pseudosaturn.vcxproj.filters
 pseudosaturn.vcxproj
 run.bat
+/cdpatch/Release
+/cdpatch/Debug
+/Debug
