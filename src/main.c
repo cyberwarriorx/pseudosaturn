@@ -441,7 +441,8 @@ int main()
    for(;;)
    {
       commlink_start_service();
-      choice = gui_do_menu(main_menu, &main_font, 0, 0, "Pseudo Saturn v0.829", MTYPE_CENTER, -1);
+      choice = gui_do_menu(main_menu, &main_font, 0, 0, "Pseudo Saturn v" PSEUDOSATURN_VERSION, MTYPE_CENTER, -1);
+
       main_font.transparent = 1;
       gui_clear_scr(&main_font);
    }

@@ -13,6 +13,8 @@ set(CMAKE_EXECUTABLE_SUFFIX ".elf")
 find_program(CMAKE_MKISOFS
     NAMES mkisofs)
 
+add_definitions(-DINSTALLER_VERSION=\"${INSTALLER_VERSION}\")
+
 add_executable(${PROJECT_NAME} ${installer_SOURCES})
 
 target_link_libraries(${PROJECT_NAME} ${IAPETUS_LIB} )
@@ -30,5 +32,5 @@ add_custom_command(TARGET ${PROJECT_NAME}
 	ARGS -G ${CMAKE_SOURCE_DIR}/src/installer/ip.bin -sysid "SEGA SEGASATURN" -volid "PSEUDOSATURN INSTALLER" -volset "PSEUDOSATURN INSTALLER" -publisher "Cyber Warrior X" -preparer "Cyber Warrior X" -appid "PSEUDOSATURN INSTALLER" -abstract "abs.txt" -copyright "cpy.txt" -biblio "bib.txt" -full-iso9660-filenames -o ${PROJECT_NAME}.iso ${PROJECT_NAME}.bin ${CMAKE_SOURCE_DIR}/src/installer/padding
 	COMMENT "Generating disc image for ${PROJECT_NAME}")
 
-#install(TARGETS ${PROJECT_NAME}.iso)
+install(FILES ${CMAKE_BINARY_DIR}/src/installer/${PROJECT_NAME}.iso DESTINATION ".")
 

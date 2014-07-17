@@ -1,0 +1,6 @@
+0.829 -> 0.830
+ cdpatch:
+  - Fixed several issues with bin/cue iso patching
+ firmware/installer:
+  - Added support for newer EMS 4M Plus cartridge
+  - Added experimental support for Xinga Action Replay clone cartridge

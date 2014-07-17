@@ -2,15 +2,23 @@ project(PseudoSaturn)
 
 enable_language(ASM)
 set(PseudoSaturn_SOURCES
-	crt0.s
+	shared/crt0.s
 	cdload.c
 	main.c)
 
 set(CMAKE_C_FLAGS "-O2 -Wall -m2")
-set(CMAKE_EXE_LINKER_FLAGS "-nostartfiles -Wl,--script,${CMAKE_SOURCE_DIR}/src/bart.lk")
+set(CMAKE_EXE_LINKER_FLAGS "-nostartfiles -Wl,--script,${CMAKE_SOURCE_DIR}/src/shared/bart.lk")
 set(CMAKE_EXECUTABLE_SUFFIX ".elf")
 
+add_definitions(-DPSEUDOSATURN_VERSION=\"${PSEUDOSATURN_VERSION}\")
+
 set_source_files_properties(cdload.c PROPERTIES OBJECT_DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/cdload/cdload.bin)
+
+add_custom_command(OUTPUT ${CMAKE_SOURCE_DIR}/src/codes.c
+	DEPENDS codes.bin
+	COMMAND ${CMAKE_BIN2C} 
+	ARGS ${CMAKE_SOURCE_DIR}/src/codes.bin ${CMAKE_SOURCE_DIR}/src/codes.c cheatlist
+    COMMENT "Generating source file from codes.bin" )
 
 add_executable(${PROJECT_NAME} ${PseudoSaturn_SOURCES})
 
@@ -37,5 +45,7 @@ add_custom_command(TARGET ${PROJECT_NAME}
 
 add_subdirectory(installer)
 
-#install(TARGETS ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.BIN)
+install(FILES ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.BIN DESTINATION ".")
+install(FILES ${CMAKE_SOURCE_DIR}/CHANGELOG DESTINATION ".")
+install(FILES ${CMAKE_SOURCE_DIR}/README.TXT DESTINATION ".")
 

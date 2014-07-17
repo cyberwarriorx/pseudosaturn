@@ -22,11 +22,57 @@
 */
 
 #include <string.h>
+#include <stdio.h>
 #include <iapetus.h>
 #include "main.h"
 #include "ps_rom.h"
 
 font_struct main_font;
+
+//////////////////////////////////////////////////////////////////////////////
+
+u16 wait_for_press()
+{
+	for (;;)        
+	{
+		vdp_vsync(); 
+		if (per[0].but_push_once)
+			break;
+	}
+	return per[0].but_push_once;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+
+BOOL ar_handle_detect_error(int err)
+{
+	char text[128];
+	u16 press;
+	u16 vendor_id, device_id;
+	if (err == IAPETUS_ERR_HWNOTFOUND)
+		sprintf(text, "HW not found.");
+	else if(err == IAPETUS_ERR_UNSUPPORTED)
+		sprintf(text, "HW not supported.");
+	else
+		sprintf(text, "Unknown error.");
+	vdp_printf(&main_font, 8, 8, 0xF, "Error detecting cart. %s", text);
+	ar_get_product_id(&vendor_id, &device_id);
+	vdp_printf(&main_font, 8, 16, 0xF, "HW ID: %04X %04X", vendor_id, device_id);
+
+	press=wait_for_press();
+
+	if (err != IAPETUS_ERR_UNSUPPORTED)
+		return FALSE;
+
+	if (press & PAD_A && press & PAD_B && press & PAD_C)
+	{
+		vdp_vsync();
+		vdp_clear_screen(&main_font);
+		return TRUE;
+	}
+
+	return FALSE;
+}
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -41,27 +87,21 @@ void backup_flash()
 	vdp_end_draw_list();
 
 	if ((ret = ar_init_flash_io()) != IAPETUS_ERR_OK)
-		vdp_printf(&main_font, 8, 8, 0xF, "Error detecting cart. Err code = %d", ret);
-	else
 	{
-		for (i = 0; i < 0x40000; i++)
-			write_addr[i] = read_addr[i];
-
-		vdp_printf(&main_font, 8, 3 * 8, 0xF, "Firmware ready to download. Set your");
-		vdp_printf(&main_font, 8, 4 * 8, 0xF, "Commlink utility to download data from");
-		vdp_printf(&main_font, 8, 5 * 8, 0xF, "LWRAM(0x00200000 to 0x00240000)");
-		vdp_printf(&main_font, 8, 6 * 8, 0xF, "Press any button to exit.");
-
-		commlink_start_service();
+		if (!ar_handle_detect_error(ret))
+		   return;
 	}
 
-	for (;;)        
-	{
-		vdp_vsync(); 
-		if (per[0].but_push_once)
-			break;
-	}
+	for (i = 0; i < 0x40000; i++)
+		write_addr[i] = read_addr[i];
 
+	vdp_printf(&main_font, 8, 3 * 8, 0xF, "Firmware ready to download. Set your");
+	vdp_printf(&main_font, 8, 4 * 8, 0xF, "Commlink utility to download data from");
+	vdp_printf(&main_font, 8, 5 * 8, 0xF, "LWRAM(0x00200000 to 0x00240000)");
+	vdp_printf(&main_font, 8, 6 * 8, 0xF, "Press any button to exit.");
+
+	commlink_start_service();
+	wait_for_press();
 	commlink_stop_service();
 }
 
@@ -81,8 +121,8 @@ int reflash_ar(font_struct *font, u8 *rom_addr, int ask_upload)
 start:
       if ((ret = ar_init_flash_io()) != IAPETUS_ERR_OK)
       {
-         vdp_printf(font, 8, 8, 0xF, "Error detecting cart. Err code = %d", ret);
-         goto done;
+			if (!ar_handle_detect_error(ret))
+				return 1;
       }
 
       vdp_printf(font, 8, 8, 0xF, "Detected cart succesfully");
@@ -261,7 +301,7 @@ int main()
 	for(;;)
 	{
 		commlink_start_service();
-		choice = gui_do_menu(main_menu, &main_font, 0, 0, "Pseudo Saturn Installer v1.0", MTYPE_CENTER, -1);
+		choice = gui_do_menu(main_menu, &main_font, 0, 0, "Pseudo Saturn Installer v" INSTALLER_VERSION, MTYPE_CENTER, -1);
 
 		main_font.transparent = 1;
 		gui_clear_scr(&main_font);
