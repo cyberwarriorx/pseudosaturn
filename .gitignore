@@ -11,3 +11,7 @@ run.bat
 /cdpatch/Debug
 /Debug
 /Debug
+cdpatch/cdpatch.aps
+cdpatch/cdpatch.suo
+cdpatch/cdpatch.sdf
+cdpatch/cdpatch.vcxproj.filters

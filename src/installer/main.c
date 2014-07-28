@@ -82,11 +82,12 @@ void backup_flash()
 	volatile u16 *read_addr=(volatile u16 *)0x22000000;
 	volatile u16 *write_addr=(volatile u16 *)0x20200000;
 	u32 i;
+	flash_info_struct flash_info;
 
 	vdp_start_draw_list();
 	vdp_end_draw_list();
 
-	if ((ret = ar_init_flash_io()) != IAPETUS_ERR_OK)
+	if ((ret = ar_init_flash_io(&flash_info)) != IAPETUS_ERR_OK)
 	{
 		if (!ar_handle_detect_error(ret))
 		   return;
@@ -112,6 +113,7 @@ int reflash_ar(font_struct *font, u8 *rom_addr, int ask_upload)
    int ret;
    volatile u16 *write_addr=(volatile u16 *)0x22000000;
    u16 *read_addr=(u16 *)((u32)rom_addr | 0x20000000);
+	flash_info_struct flash_info;
 
    vdp_start_draw_list();
    vdp_end_draw_list();
@@ -119,7 +121,7 @@ int reflash_ar(font_struct *font, u8 *rom_addr, int ask_upload)
    for (;;)
    {
 start:
-      if ((ret = ar_init_flash_io()) != IAPETUS_ERR_OK)
+      if ((ret = ar_init_flash_io(&flash_info)) != IAPETUS_ERR_OK)
       {
 			if (!ar_handle_detect_error(ret))
 				return 1;
@@ -180,10 +182,10 @@ start:
 
       vdp_printf(font, 8, 11 * 8, 0xF, "DO NOT TURN OFF YOUR SYSTEM");
       vdp_printf(font, 8, 12 * 8, 0xF, "Writing flash...");
-      ar_write_flash(write_addr, read_addr, 1024); // fix me
+      ar_write_flash(&flash_info, write_addr, read_addr, 1024); // fix me
       vdp_printf(font, 17 * 8, 12 * 8, 0xF, "OK");
       vdp_printf(font, 8, 13 * 8, 0xF, "Verifying flash...");
-      ret = ar_verify_write_flash(write_addr, read_addr, 1024);
+      ret = ar_verify_write_flash(&flash_info, write_addr, read_addr, 1024);
       vdp_printf(font, 19 * 8, 13 * 8, 0xF, ret ? "OK" : "FAILED");
 
       if (ret)
@@ -297,15 +299,18 @@ int main()
    // Display everything
    vdp_disp_on();
 
-	// Display Main Menu
-	for(;;)
-	{
-		commlink_start_service();
-		choice = gui_do_menu(main_menu, &main_font, 0, 0, "Pseudo Saturn Installer v" INSTALLER_VERSION, MTYPE_CENTER, -1);
+   if (ud_detect() == IAPETUS_ERR_OK)
+      cl_set_service_func(ud_check);
 
-		main_font.transparent = 1;
-		gui_clear_scr(&main_font);
-	}
+   // Display Main Menu
+   for(;;)
+   {
+      commlink_start_service();
+      choice = gui_do_menu(main_menu, &main_font, 0, 0, "Pseudo Saturn Installer v" INSTALLER_VERSION, MTYPE_CENTER, -1);
+
+      main_font.transparent = 1;
+      gui_clear_scr(&main_font);
+   }
 
    return 0;
 }

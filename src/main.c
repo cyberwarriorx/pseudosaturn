@@ -128,6 +128,107 @@ void load_and_start(u32 start_addr, u32 ipsize)
 
 //////////////////////////////////////////////////////////////////////////////
 
+int cd_set_sector_size(int size);
+
+int cd_move_sector_data_cd_auth(u8 dst_filter, u16 sector_pos, u8 sel_num, u16 num_sectors)
+{
+	int ret;
+	cd_cmd_struct cd_cmd1;
+	cd_cmd_struct cd_cmd2;
+	cd_cmd_struct cd_cmd_rs;
+	int i;
+	cd_stat_struct cd_status;
+	u16 auth;
+
+	cd_cmd1.CR1 = 0x6600 | dst_filter;
+	cd_cmd1.CR2 = sector_pos;
+	cd_cmd1.CR3 = sel_num << 8;
+	cd_cmd1.CR4 = num_sectors;
+
+	cd_cmd2.CR1 = 0xE000;
+	cd_cmd2.CR2 = 0x0000;
+	cd_cmd2.CR3 = 0x0000;
+	cd_cmd2.CR4 = 0x0000;
+
+	ret = cd_exec_command(0, &cd_cmd1, &cd_cmd_rs);
+
+	// Clear hirq flags
+	CDB_REG_HIRQ = ~(HIRQ_DCHG | HIRQ_EFLS);
+
+	// Authenticate disc
+	if ((ret = cd_exec_command(HIRQ_EFLS, &cd_cmd2, &cd_cmd_rs)) != 0)
+		return ret;
+
+	// wait till operation is finished
+	while (!(CDB_REG_HIRQ & HIRQ_EFLS)) {}
+
+	// Wait until drive has finished seeking
+	for (;;)
+	{
+		// wait a bit
+		for (i = 0; i < 100000; i++) { }
+
+		if (cd_get_stat(&cd_status) != 0) continue;
+
+		if (cd_status.status == STATUS_PAUSE) break;
+		else if (cd_status.status == STATUS_FATAL) return IAPETUS_ERR_UNKNOWN;
+	}
+
+	// Was Authentication successful?
+	if (!is_cd_auth(&auth))
+		return IAPETUS_ERR_AUTH;
+
+	return IAPETUS_ERR_OK;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+
+int jhl_cd_hack()
+{
+	int ret;
+	int i, j;
+	u16 type;
+
+	if ((ret = cd_set_sector_size(SECT_2352)) != 0)
+		return ret;
+
+	// Write 150x2352 sectors
+	if ((ret = cd_put_sector_data(0, 150)) != 0)
+		return ret;
+
+	// copy data
+	for (j = 0; j < 150; j++)
+	{
+		for (i = 0; i < (2352/4); i++)
+			CDB_REG_DATATRNS = 0x00020002;
+	}
+
+	if ((ret = cd_end_transfer()) != 0)
+		return ret;
+
+	while (!(CDB_REG_HIRQ & HIRQ_EHST)) {}
+
+	ret = cd_move_sector_data_cd_auth(0, 0, 0, 50);
+
+	ret = is_cd_auth(&type);
+	//vdp_printf(&main_font, 8, 5 * 8, 0xF, "is_cd_auth = %d, type = %d", ret, type);
+
+	while (!(CDB_REG_HIRQ & HIRQ_ECPY)) {}
+
+	if ((ret = cd_end_transfer()) != 0)
+		return ret;
+
+	if ((ret = cd_set_sector_size(SECT_2048)) != 0)
+		return ret;
+
+	if ((ret = cd_reset_selector_all()) != 0)
+		return ret;
+
+	return ret;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+
 void start_game()
 {
    int stage=1;
@@ -184,7 +285,7 @@ void start_game()
 
             if (!is_cd_auth(&disc_type))
             {
-               cd_auth();
+               jhl_cd_hack();
 
                if (!is_cd_auth(&disc_type))
                {
@@ -283,6 +384,7 @@ void reflash_ar()
    int ret;
    volatile u16 *write_addr=(volatile u16 *)0x22000000;
    u16 *read_addr=(u16 *)0x20200000;
+	flash_info_struct flash_info;
 
    vdp_start_draw_list();
    vdp_end_draw_list();
@@ -290,7 +392,7 @@ void reflash_ar()
    for (;;)
    {
 start:
-      if ((ret = ar_init_flash_io()) != IAPETUS_ERR_OK)
+      if ((ret = ar_init_flash_io(&flash_info)) != IAPETUS_ERR_OK)
       {
          vdp_printf(&main_font, 8, 8, 0xF, "Error detecting cart. Err code = %d", ret);
          goto done;
@@ -348,10 +450,10 @@ start:
 
       vdp_printf(&main_font, 8, 11 * 8, 0xF, "DO NOT TURN OFF YOUR SYSTEM");
       vdp_printf(&main_font, 8, 12 * 8, 0xF, "Writing flash...");
-      ar_write_flash(write_addr, read_addr, 1024); // fix me
+      ar_write_flash(&flash_info, write_addr, read_addr, 1024); // fix me
       vdp_printf(&main_font, 17 * 8, 12 * 8, 0xF, "OK");
       vdp_printf(&main_font, 8, 13 * 8, 0xF, "Verifying flash...");
-      ret = ar_verify_write_flash(write_addr, read_addr, 1024);
+      ret = ar_verify_write_flash(&flash_info, write_addr, read_addr, 1024);
       vdp_printf(&main_font, 19 * 8, 13 * 8, 0xF, ret ? "OK" : "FAILED");
 
       if (ret)
@@ -436,6 +538,9 @@ int main()
 
    // Display everything
    vdp_disp_on();
+
+   if (ud_detect() == IAPETUS_ERR_OK)
+      cl_set_service_func(ud_check);
 
    // Display Main Menu
    for(;;)

@@ -2,6 +2,8 @@ Introduction
 ------------
 This code was designed as a proof of concept for running Saturn code from cd's without requiring special mastering hardware. It was the product of several months of studying the process by which the cd block authenticates a disc and unlocks functionality.
 
+The code for booting unmodified Saturn disc images came from jhl's research and algorithm. I can only claim the work of the actual implementation of it in Pseudo Saturn.
+
 Dependencies
 ------------
 Everything was compiled using the kpit elf compiler and the Iapetus library. Iapetus itself is downloaded from github if it isn't already present. You will need to compile some kind of SH2 cross compiler beforehand. Otherwise everything else should be detected using cmake.
@@ -64,6 +66,7 @@ Thanks to my buds on #yabause and rhdn
 -Charles MacDonald
 -esperknight
 -Guill
+-jhl
 -pinchy
 -SamIAm
 -SaturnAR
