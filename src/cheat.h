@@ -17,17 +17,9 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#ifndef MAIN_H
-#define MAIN_H
+#ifndef CHEAT_H
+#define CHEAT_H
 
-void ipprog(void);
-
-void start_game();
-void cdplayer();
-void select_cheats();
-void reflash_ar();
-void credits();
-
-extern font_struct main_font;
+int ct_games_do_menu(font_struct *font);
 
 #endif

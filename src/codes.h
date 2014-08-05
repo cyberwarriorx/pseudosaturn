@@ -17,17 +17,10 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#ifndef MAIN_H
-#define MAIN_H
+#ifndef CODES_H
+#define CODES_H
 
-void ipprog(void);
-
-void start_game();
-void cdplayer();
-void select_cheats();
-void reflash_ar();
-void credits();
-
-extern font_struct main_font;
+extern u8 cheatlist[];
+extern u32 cheatlist_size;
 
 #endif

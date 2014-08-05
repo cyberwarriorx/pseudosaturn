@@ -6,6 +6,13 @@ set(PseudoSaturn_SOURCES
 	cdload.c
 	main.c)
 
+if (PS_WANT_CHEATS)
+    set(PseudoSaturn_SOURCES ${PseudoSaturn_SOURCES}
+        cheat.c
+        codes.c
+        mastercode.s)
+endif()
+
 set(CMAKE_C_FLAGS "-O2 -Wall -m2")
 set(CMAKE_EXE_LINKER_FLAGS "-nostartfiles -Wl,--script,${CMAKE_SOURCE_DIR}/src/shared/bart.lk")
 set(CMAKE_EXECUTABLE_SUFFIX ".elf")

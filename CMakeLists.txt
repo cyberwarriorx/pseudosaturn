@@ -104,5 +104,10 @@ endif(IAPETUS_LIB STREQUAL "IAPETUS_LIB-NOTFOUND")
 
 set(PseudoSaturn_LIBRARIES ${IAPETUS_LIB})
 
+option(PS_WANT_CHEATS "Enable experimental cheat engine" OFF)
+if (PS_WANT_CHEATS)
+	add_definitions(-DENABLE_CHEATS=1)
+endif()
+
 add_subdirectory(src/cdload)
 add_subdirectory(src)

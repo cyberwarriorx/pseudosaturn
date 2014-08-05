@@ -114,6 +114,7 @@ int reflash_ar(font_struct *font, u8 *rom_addr, int ask_upload)
    volatile u16 *write_addr=(volatile u16 *)0x22000000;
    u16 *read_addr=(u16 *)((u32)rom_addr | 0x20000000);
 	flash_info_struct flash_info;
+	int i;
 
    vdp_start_draw_list();
    vdp_end_draw_list();
@@ -181,21 +182,32 @@ start:
       }
 
       vdp_printf(font, 8, 11 * 8, 0xF, "DO NOT TURN OFF YOUR SYSTEM");
-      vdp_printf(font, 8, 12 * 8, 0xF, "Writing flash...");
-      ar_write_flash(&flash_info, write_addr, read_addr, 1024); // fix me
+
+      vdp_printf(font, 8, 12 * 8, 0xF, "Erasing flash...");
+      ar_erase_flash_all(&flash_info);
       vdp_printf(font, 17 * 8, 12 * 8, 0xF, "OK");
-      vdp_printf(font, 8, 13 * 8, 0xF, "Verifying flash...");
-      ret = ar_verify_write_flash(&flash_info, write_addr, read_addr, 1024);
-      vdp_printf(font, 19 * 8, 13 * 8, 0xF, ret ? "OK" : "FAILED");
+
+      vdp_printf(font, 8, 13 * 8, 0xF, "Writing flash...");		
+      font->transparent = FALSE;
+      for (i = 0; i < flash_info.num_pages; i++)
+      {
+         vdp_printf(font, 17 * 8, 13 * 8, 0xF, "%d%%  ", (i+1) * 100 / 32);
+         ar_write_flash(&flash_info, write_addr+(i*flash_info.page_size), read_addr+(i*flash_info.page_size), 1);
+      }
+      vdp_printf(font, 17 * 8, 13 * 8, 0xF, "OK  ");
+      font->transparent = TRUE;
+      vdp_printf(font, 8, 14 * 8, 0xF, "Verifying flash...");
+      ret = ar_verify_write_flash(&flash_info, write_addr, read_addr, flash_info.num_pages);
+      vdp_printf(font, 19 * 8, 14 * 8, 0xF, ret ? "OK" : "FAILED");
 
       if (ret)
       {
-         vdp_printf(font, 8, 14 * 8, 0xF, "SUCCESS! Press reset to finish.");
+         vdp_printf(font, 8, 15 * 8, 0xF, "SUCCESS! Press reset to finish.");
          goto done;
       }
 
-      vdp_printf(font, 8, 14 * 8, 0xF, "Failed flashing AR. Press a 'A' to");
-      vdp_printf(font, 8, 15 * 8, 0xF, "retry or 'X' to exit");
+      vdp_printf(font, 8, 15 * 8, 0xF, "Failed flashing AR. Press a 'A' to");
+      vdp_printf(font, 8, 16 * 8, 0xF, "retry or 'X' to exit");
 
       for (;;)        
       {
@@ -264,12 +276,10 @@ menu_item_struct main_menu[] = {
 
 //////////////////////////////////////////////////////////////////////////////
 
-int main()
+void installer_init()
 {
    screen_settings_struct settings;
-   int choice;
 
-   // This should always be called at the begining of your program.
    init_iapetus(RES_320x224);
 
    // Setup a screen for us draw on
@@ -299,14 +309,19 @@ int main()
    // Display everything
    vdp_disp_on();
 
-   if (ud_detect() == IAPETUS_ERR_OK)
-      cl_set_service_func(ud_check);
+	if (ud_detect() == IAPETUS_ERR_OK)
+		cl_set_service_func(ud_check);
+}
+
+int main()
+{
+   installer_init();
 
    // Display Main Menu
    for(;;)
    {
       commlink_start_service();
-      choice = gui_do_menu(main_menu, &main_font, 0, 0, "Pseudo Saturn Installer v" INSTALLER_VERSION, MTYPE_CENTER, -1);
+      gui_do_menu(main_menu, &main_font, 0, 0, "Pseudo Saturn Installer v" INSTALLER_VERSION, MTYPE_CENTER, -1);
 
       main_font.transparent = 1;
       gui_clear_scr(&main_font);

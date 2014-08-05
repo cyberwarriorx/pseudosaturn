@@ -59,7 +59,7 @@ There's a few things I really want to add at some point given the time:
 
 Special Thanks
 --------------
-Thanks to my buds on #yabause and rhdn
+Thanks to my buds on #yabause, rhdn, and assemblergames
 -Amon
 -Bacon
 -BlueCrab
@@ -72,6 +72,7 @@ Thanks to my buds on #yabause and rhdn
 -SaturnAR
 -tehcloud
 -WhiteSnake
+-zorlon
 
 The "Screw you" list(by request)
 --------------------------------

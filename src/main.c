@@ -22,8 +22,10 @@
     by Cyber Warrior X. Based on code by Charles MacDonald.
 */
 
+#include <stdio.h>
 #include <string.h>
 #include <iapetus.h>
+#include "cheat.h"
 #include "cdload.h"
 #include "main.h"
 
@@ -31,12 +33,20 @@
 
 u8 *sect_buffer = (u8 *)0x26002000;
 
+#ifdef ENABLE_CHEATS
+#define ROM_CHEAT_LIST 0x02020000
+#define CHEAT_LIST 0x00200000
+#endif
+
 font_struct main_font;
 
 u8 *dir_tbl;
 
 menu_item_struct main_menu[] = {
 { "Start Game" , &start_game, },
+#ifdef ENABLE_CHEATS
+{ "Select Cheats", &select_cheats, },
+#endif
 { "Reflash AR" , &reflash_ar, },
 { "Credits" , &credits, }, 
 { "\0", NULL }
@@ -379,12 +389,78 @@ void start_game()
 
 //////////////////////////////////////////////////////////////////////////////
 
+#ifdef ENABLE_CHEATS
+
+void select_cheats()
+{
+   // Display Main Menu
+   for(;;)
+   {      
+      int choice = ct_games_do_menu(&main_font);
+
+      main_font.transparent = 1;
+      gui_clear_scr(&main_font);
+      if (choice == -1)
+         break;
+   }
+}
+
+#endif
+
+//////////////////////////////////////////////////////////////////////////////
+
+u16 wait_for_press()
+{
+	for (;;)        
+	{
+		vdp_vsync(); 
+		if (per[0].but_push_once)
+			break;
+	}
+	return per[0].but_push_once;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+
+BOOL ar_handle_detect_error(int err)
+{
+	char text[128];
+	u16 press;
+	u16 vendor_id, device_id;
+	if (err == IAPETUS_ERR_HWNOTFOUND)
+		sprintf(text, "HW not found.");
+	else if(err == IAPETUS_ERR_UNSUPPORTED)
+		sprintf(text, "HW not supported.");
+	else
+		sprintf(text, "Unknown error.");
+	vdp_printf(&main_font, 8, 8, 0xF, "Error detecting cart. %s", text);
+	ar_get_product_id(&vendor_id, &device_id);
+	vdp_printf(&main_font, 8, 16, 0xF, "HW ID: %04X %04X", vendor_id, device_id);
+
+	press=wait_for_press();
+
+	if (err != IAPETUS_ERR_UNSUPPORTED)
+		return FALSE;
+
+	if (press & PAD_A && press & PAD_B && press & PAD_C)
+	{
+		vdp_vsync();
+		vdp_clear_screen(&main_font);
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+
 void reflash_ar()
 {
    int ret;
    volatile u16 *write_addr=(volatile u16 *)0x22000000;
    u16 *read_addr=(u16 *)0x20200000;
 	flash_info_struct flash_info;
+	int i;
 
    vdp_start_draw_list();
    vdp_end_draw_list();
@@ -394,8 +470,8 @@ void reflash_ar()
 start:
       if ((ret = ar_init_flash_io(&flash_info)) != IAPETUS_ERR_OK)
       {
-         vdp_printf(&main_font, 8, 8, 0xF, "Error detecting cart. Err code = %d", ret);
-         goto done;
+			if (!ar_handle_detect_error(ret))
+            goto done;
       }
 
       vdp_printf(&main_font, 8, 8, 0xF, "Detected cart succesfully");
@@ -419,8 +495,8 @@ start:
 
       if (strncmp((char *)read_addr, "SEGA SEGASATURN ", 16) != 0)
       {
-         vdp_printf(&main_font, 8, 7 * 8, 0xF, "Invalid or no ROM uploaded. Press 'A'");
-         vdp_printf(&main_font, 8, 8 * 8, 0xF, "to try again.");
+         vdp_printf(&main_font, 8, 7 * 8, 0xF, "Invalid or no ROM uploaded.");
+         vdp_printf(&main_font, 8, 8 * 8, 0xF, "Press 'A' to try again.");
 
          for (;;)        
          {
@@ -449,21 +525,32 @@ start:
       }
 
       vdp_printf(&main_font, 8, 11 * 8, 0xF, "DO NOT TURN OFF YOUR SYSTEM");
-      vdp_printf(&main_font, 8, 12 * 8, 0xF, "Writing flash...");
-      ar_write_flash(&flash_info, write_addr, read_addr, 1024); // fix me
-      vdp_printf(&main_font, 17 * 8, 12 * 8, 0xF, "OK");
-      vdp_printf(&main_font, 8, 13 * 8, 0xF, "Verifying flash...");
-      ret = ar_verify_write_flash(&flash_info, write_addr, read_addr, 1024);
-      vdp_printf(&main_font, 19 * 8, 13 * 8, 0xF, ret ? "OK" : "FAILED");
+
+		vdp_printf(&main_font, 8, 12 * 8, 0xF, "Erasing flash...");
+		ar_erase_flash_all(&flash_info);
+		vdp_printf(&main_font, 17 * 8, 12 * 8, 0xF, "OK");
+
+		vdp_printf(&main_font, 8, 13 * 8, 0xF, "Writing flash...");		
+		main_font.transparent = FALSE;
+		for (i = 0; i < flash_info.num_pages; i++)
+		{
+			vdp_printf(&main_font, 17 * 8, 13 * 8, 0xF, "%d%%  ", (i+1) * 100 / 32);
+			ar_write_flash(&flash_info, write_addr+(i*flash_info.page_size), read_addr+(i*flash_info.page_size), 1);
+		}
+		vdp_printf(&main_font, 17 * 8, 13 * 8, 0xF, "OK  ");
+		main_font.transparent = TRUE;
+      vdp_printf(&main_font, 8, 14 * 8, 0xF, "Verifying flash...");
+      ret = ar_verify_write_flash(&flash_info, write_addr, read_addr, flash_info.num_pages);
+      vdp_printf(&main_font, 19 * 8, 14 * 8, 0xF, ret ? "OK" : "FAILED");
 
       if (ret)
       {
-         vdp_printf(&main_font, 8, 14 * 8, 0xF, "SUCCESS! Press reset to finish.");
+         vdp_printf(&main_font, 8, 15 * 8, 0xF, "SUCCESS! Press reset to finish.");
          goto done;
       }
 
-      vdp_printf(&main_font, 8, 14 * 8, 0xF, "Failed flashing AR. Press a 'A' to");
-      vdp_printf(&main_font, 8, 15 * 8, 0xF, "retry or 'X' to exit");
+      vdp_printf(&main_font, 8, 15 * 8, 0xF, "Failed flashing AR. Press a 'A' to");
+      vdp_printf(&main_font, 8, 16 * 8, 0xF, "retry or 'X' to exit");
 
       for (;;)        
       {
@@ -504,49 +591,54 @@ void credits()
 
 //////////////////////////////////////////////////////////////////////////////
 
+void ps_init()
+{
+	screen_settings_struct settings;
+
+	init_iapetus(RES_320x224);
+
+	// Setup a screen for us draw on
+	settings.is_bitmap = TRUE;
+	settings.bitmap_size = BG_BITMAP512x256;
+	settings.transparent_bit = 0;
+	settings.color = BG_256COLOR;
+	settings.special_priority = 0;
+	settings.special_color_calc = 0;
+	settings.extra_palette_num = 0;
+	settings.map_offset = 0;
+	settings.rotation_mode = 0;
+	settings.parameter_addr = 0x25E60000;
+	vdp_rbg0_init(&settings);
+
+	// Use the default palette
+	vdp_set_default_palette();
+
+	// Setup the default 8x16 1BPP font
+	main_font.data = font_8x8;
+	main_font.width = 8;
+	main_font.height = 8;
+	main_font.bpp = 1;
+	main_font.out = (u8 *)0x25E00000;
+	vdp_set_font(SCREEN_RBG0, &main_font, 1);
+
+	// Display everything
+	vdp_disp_on();
+
+	if (ud_detect() == IAPETUS_ERR_OK)
+		cl_set_service_func(ud_check);
+}
+
+//////////////////////////////////////////////////////////////////////////////
+
 int main()
 {
-   screen_settings_struct settings;
-   int choice;
-
-   // This should always be called at the begining of your program.
-   init_iapetus(RES_320x224);
-
-   // Setup a screen for us draw on
-   settings.is_bitmap = TRUE;
-   settings.bitmap_size = BG_BITMAP512x256;
-   settings.transparent_bit = 0;
-   settings.color = BG_256COLOR;
-   settings.special_priority = 0;
-   settings.special_color_calc = 0;
-   settings.extra_palette_num = 0;
-   settings.map_offset = 0;
-   settings.rotation_mode = 0;
-   settings.parameter_addr = 0x25E60000;
-   vdp_rbg0_init(&settings);
-
-   // Use the default palette
-   vdp_set_default_palette();
-
-   // Setup the default 8x16 1BPP font
-   main_font.data = font_8x8;
-   main_font.width = 8;
-   main_font.height = 8;
-   main_font.bpp = 1;
-   main_font.out = (u8 *)0x25E00000;
-   vdp_set_font(SCREEN_RBG0, &main_font, 1);
-
-   // Display everything
-   vdp_disp_on();
-
-   if (ud_detect() == IAPETUS_ERR_OK)
-      cl_set_service_func(ud_check);
+	ps_init();
 
    // Display Main Menu
    for(;;)
    {
       commlink_start_service();
-      choice = gui_do_menu(main_menu, &main_font, 0, 0, "Pseudo Saturn v" PSEUDOSATURN_VERSION, MTYPE_CENTER, -1);
+      gui_do_menu(main_menu, &main_font, 0, 0, "Pseudo Saturn v" PSEUDOSATURN_VERSION, MTYPE_CENTER, -1);
 
       main_font.transparent = 1;
       gui_clear_scr(&main_font);

@@ -38,12 +38,11 @@ font_struct main_font;
 int main()
 {
    file_struct file;
-   int start_addr, ip_size;
+   int start_addr;
    int i, i2;
    u8 *sect_buffer = (u8 *)0x26002000;
 	
    start_addr = *((u32 *)(sect_buffer+0xF0));
-   ip_size =    *((u32 *)(sect_buffer+0xE0));
 
    // Re-initialize peripherals since Pseudosaturn still has a hold of it
    per_init();

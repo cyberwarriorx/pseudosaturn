@@ -1,3 +1,10 @@
+0.830 -> 0.831
+ firmware/installer:
+  - Added new exploit discovered by jhl. Custom discs are no longer required.
+  - Added communication/flash support for USB Dev cartridge.
+  - Added basic code for cheat selection. Not currently functional.
+  - Flash is now erased before writing in case something fails during a write.
+
 0.829 -> 0.830
  cdpatch:
   - Fixed several issues with bin/cue iso patching
