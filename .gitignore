@@ -10,8 +10,10 @@ run.bat
 /cdpatch/Release
 /cdpatch/Debug
 /Debug
-/Debug
 cdpatch/cdpatch.aps
 cdpatch/cdpatch.suo
 cdpatch/cdpatch.sdf
 cdpatch/cdpatch.vcxproj.filters
+Debug/pseudosaturn.log
+*.opensdf
+*.idc
