@@ -39,14 +39,10 @@ WARNING: Flashing data to your Action Replay may possibly fail. This is especial
 
 Usage Instruction
 -----------------
-1. First you need to patch an existing disc image using "cdpatch" utility. Currently only iso and bin/cue formats are supported.
-2. Start up appliation. Click "Browse" and select image.
-3. Click "Patch".
-4. Close application and load up your favorite cd burning software and burn to CD.
-5. Make sure your Action Replay is inserted while the Saturn is off.
-6. Turn on Saturn and go through boot process. License screen should pop up, and then a new menu should show.
-7. Use d-pad to move selection. By default it should be over "Start Game". Make sure it's selected and press 'A' button.
-8. If all goes well, game should be detected as a "Pseudo Saturn" disc and boot up. Retail discs should also boot fine.
+1. Make sure your Action Replay is inserted while the Saturn is off.
+2. Turn on Saturn and go through boot process. License screen should pop up, and then a new menu should show.
+3. Use d-pad to move selection. By default it should be over "Start Game". Make sure it's selected and press 'A' button.
+4. If all goes well, game should be detected as a "Pseudo Saturn" or "Saturn" disc and boot up. Retail discs should also boot fine.
 
 Todo List
 ---------
