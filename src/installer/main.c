@@ -191,7 +191,7 @@ start:
       font->transparent = FALSE;
       for (i = 0; i < flash_info.num_pages; i++)
       {
-         vdp_printf(font, 17 * 8, 13 * 8, 0xF, "%d%%  ", (i+1) * 100 / 32);
+         vdp_printf(font, 17 * 8, 13 * 8, 0xF, "%d%%  ", (i+1) * 100 / flash_info.num_pages);
          ar_write_flash(&flash_info, write_addr+(i*flash_info.page_size), read_addr+(i*flash_info.page_size), 1);
       }
       vdp_printf(font, 17 * 8, 13 * 8, 0xF, "OK  ");

@@ -72,7 +72,7 @@ include_directories(${IAPETUS_INCLUDE_DIR})
 
 set(PSEUDOSATURN_VERSION_MAJOR 0)
 set(PSEUDOSATURN_VERSION_MINOR 8)
-set(PSEUDOSATURN_VERSION_PATCH 31)
+set(PSEUDOSATURN_VERSION_PATCH 32)
 set(PSEUDOSATURN_VERSION "${PSEUDOSATURN_VERSION_MAJOR}.${PSEUDOSATURN_VERSION_MINOR}${PSEUDOSATURN_VERSION_PATCH}")
 
 set(INSTALLER_VERSION_MAJOR 1)
@@ -104,9 +104,19 @@ endif(IAPETUS_LIB STREQUAL "IAPETUS_LIB-NOTFOUND")
 
 set(PseudoSaturn_LIBRARIES ${IAPETUS_LIB})
 
+option(PS_WANT_DEBUG "Enable Debug Code" OFF)
+if (PS_WANT_DEBUG)
+	add_definitions(-DENABLE_DEBUG=1)
+endif()
+
 option(PS_WANT_CHEATS "Enable experimental cheat engine" OFF)
 if (PS_WANT_CHEATS)
 	add_definitions(-DENABLE_CHEATS=1)
+endif()
+
+option(PS_WANT_BACKUPRAM "Enable Backup Ram" OFF)
+if (PS_WANT_DEBUG)
+	add_definitions(-DENABLE_BACKUPRAM=1)
 endif()
 
 add_subdirectory(src/cdload)

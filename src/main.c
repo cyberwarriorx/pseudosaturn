@@ -69,11 +69,9 @@ void load_exec_binary(unsigned char *data, int size, u32 addr)
 
 void load_and_start(u32 start_addr, u32 ipsize)
 {
-   //vdp_printf(&mainfont, 2 * 8 , 22 * 8, 15, "load_and_start: startaddr = %08X", startaddr);
    if ((start_addr & 0x0F000000) == 0x06000000)
    {
       // Load code, etc. to lwram and execute
-      //load_exec_binary(cdload, cdload_size, 0x00202000);
       file_struct file;
       int i, i2;
 	
@@ -106,6 +104,7 @@ void load_and_start(u32 start_addr, u32 ipsize)
 
       //   vdp_printf(&mainfont, 2 * 8, 8 * 16, 15, "Start Address: %08X(%08X)", startaddr, *((u32 *)startaddr));
 
+#ifdef ENABLE_DEBUG
       // Delay for 3 seconds in case a button is hit
       vdp_print_text(&main_font, 2 * 8, 9 * 16, 15, "Starting game in X second(s)");
       vdp_print_text(&main_font, 2 * 8, 10 * 16, 15, "Hit X to enable debugger");
@@ -125,6 +124,7 @@ void load_and_start(u32 start_addr, u32 ipsize)
          }
          vdp_printf(&main_font, 19 * 8, 9 * 16, 0, "%d", i);
       }
+#endif
 
       // Execute ip code
       ipprog();
@@ -346,9 +346,10 @@ void start_game()
                // Treat it like a VCD/Photo CD and try running the vcd player
                if (mpeg_exist)
                {
-                  debugger_start();
+#ifdef ENABLE_DEBUG
+	               debugger_start();
+#endif
                   vdp_printf(&main_font, 2 * 8 , 21 * 8, 15, "Loading Potential VCD");
-
                   bios_get_mpeg_rom(0, 128, (u32)sect_buffer);
                   vdp_printf(&main_font, 2 * 8 , 22 * 8, 15, "Fetched ROM");
 						
@@ -534,7 +535,7 @@ start:
 		main_font.transparent = FALSE;
 		for (i = 0; i < flash_info.num_pages; i++)
 		{
-			vdp_printf(&main_font, 17 * 8, 13 * 8, 0xF, "%d%%  ", (i+1) * 100 / 32);
+			vdp_printf(&main_font, 17 * 8, 13 * 8, 0xF, "%d%%  ", (i+1) * 100 / flash_info.num_pages);
 			ar_write_flash(&flash_info, write_addr+(i*flash_info.page_size), read_addr+(i*flash_info.page_size), 1);
 		}
 		vdp_printf(&main_font, 17 * 8, 13 * 8, 0xF, "OK  ");

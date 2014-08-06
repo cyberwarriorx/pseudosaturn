@@ -83,11 +83,8 @@ int main()
    vdp_print_text(&main_font, 17 * 8, 7 * 16, 15, "Done.");
    vdp_vsync();
 
-   //if (hijackbup)
-   //      bup_hijack();
-
 //   vdp_printf(&mainfont, 2 * 8, 8 * 16, 15, "Start Address: %08X(%08X)", startaddr, *((u32 *)startaddr));
-
+#ifdef ENABLE_DEBUG
    // Delay for 3 seconds in case a button is hit
    vdp_print_text(&main_font, 2 * 8, 9 * 16, 15, "Starting game in X second(s)");
    vdp_print_text(&main_font, 2 * 8, 10 * 16, 15,  "Hit X to enable debugger");
@@ -107,6 +104,7 @@ int main()
       }
       vdp_printf(&main_font, 19 * 8, 9 * 16, 0, "%d", i);
    }
+#endif
 
    // Execute ip code
    ipprog();
