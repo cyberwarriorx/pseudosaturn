@@ -19,7 +19,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <io.h>
 
 unsigned char *read_file(const char *filename, long *size)
 {
@@ -31,7 +30,9 @@ unsigned char *read_file(const char *filename, long *size)
 		return NULL;
 	}
 
-	*size = _filelength(_fileno(fp));
+    fseek(fp, 0, SEEK_END);
+	*size = ftell(fp);
+    fseek(fp, 0, SEEK_SET);
 	if ((buf = malloc(*size)) == NULL)
 	{
 		printf("Error allocating buffer\n");
