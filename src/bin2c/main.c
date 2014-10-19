@@ -19,7 +19,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <io.h>
 
 int main(int argc, char *argv[])
 {
@@ -45,7 +44,9 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	size = _filelength(_fileno(fp));
+    fseek(fp, 0, SEEK_END);
+	size = ftell(fp);
+    fseek(fp, 0, SEEK_SET);
 	if ((buf = malloc(size)) == NULL)
 	{
 
