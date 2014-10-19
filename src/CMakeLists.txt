@@ -4,6 +4,7 @@ enable_language(ASM)
 set(PseudoSaturn_SOURCES
 	shared/crt0.s
 	cdload.c
+	jhloader.c
 	main.c)
 
 if (PS_WANT_CHEATS)

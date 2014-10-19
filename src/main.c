@@ -42,6 +42,8 @@ font_struct main_font;
 
 u8 *dir_tbl;
 
+void jhload(void);
+
 menu_item_struct main_menu[] = {
 { "Start Game" , &start_game, },
 #ifdef ENABLE_CHEATS
@@ -307,6 +309,9 @@ void start_game()
             }
             else
                stage = 3;
+
+            // try BIOS-based boot first
+            jhload();
 
             break;
          }
