@@ -32,8 +32,11 @@ start:
     ldc     r0,sr
 
     !bra     truestart 
-    !bra  lprog_end
+!.ifdef ENABLE_DEBUG
+!    bra  lprog_end
+!.else
     bra  wramcopy
+!.endif
     nop
 ! Start a list of usable functions here(for future use)
     
@@ -110,11 +113,13 @@ cartid:     .long 0x24FFFFFF
 initram:    .long 0x257EFFFE
 main_ptr:   .long _main
 stack_ptr:  .long 0x00300000 ! stack is from 0x002FC000-0x002FFFFF
-!stack_ptr:  .long 0x02680000 ! stack is from 0x0267C000-0x0267FFFF
 bss_start:  .long __bss_start
 bss_end:    .long __bss_end
+.ifdef ENABLE_DEBUG
+rom_start:  .long 0x06004000
+.else
 rom_start:  .long 0x02000F00
-!rom_start:  .long 0x06004000
+.endif
 prog_start: .long start
 prog_end:   .long _end
 
@@ -157,7 +162,7 @@ vdpregsloop:
     bt      vdpregsloop
 
     ! execute ip program
-    mov.l   ip_ptr,r0
+    mov.l   _ip_ptr,r0
     jsr     @r0
     nop
 endlessloop:
@@ -166,7 +171,8 @@ endlessloop:
 .align 4
 
 stack_ptr2:    .long 0x06002000
-ip_ptr:        .long 0x06002100
+.global _ip_ptr
+_ip_ptr:       .long 0x06002100
 CHGSCUMSK_ptr: .long 0x06000344
 NEWMSK:        .long 0xFFFF7FFF
 VDP2REGS_ptr:  .long 0x25F80000

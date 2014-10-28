@@ -119,5 +119,4 @@ if (PS_WANT_DEBUG)
 	add_definitions(-DENABLE_BACKUPRAM=1)
 endif()
 
-add_subdirectory(src/cdload)
 add_subdirectory(src)

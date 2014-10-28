@@ -56,90 +56,6 @@ menu_item_struct main_menu[] = {
 
 //////////////////////////////////////////////////////////////////////////////
 
-void load_exec_binary(unsigned char *data, int size, u32 addr)
-{
-   void (*func)();
-
-   //vdp_printf(&mainfont, 2 * 8 , 23 * 8, 15, "Loading binary to %08X(%d)", addr, size);
-   memcpy((void *)addr, data, size);
-   func = (void (*)())addr;
-   //vdp_printf(&mainfont, 2 * 8 , 24 * 8, 15, "Data Loaded, executing %08X", func);
-   func();
-}
-
-//////////////////////////////////////////////////////////////////////////////
-
-void load_and_start(u32 start_addr, u32 ipsize)
-{
-   if ((start_addr & 0x0F000000) == 0x06000000)
-   {
-      // Load code, etc. to lwram and execute
-      file_struct file;
-      int i, i2;
-	
-      if (cdfs_init((void *)CD_WORKBUF, 4096) != IAPETUS_ERR_OK)
-      {
-         vdp_print_text(&main_font, 2 * 8, 4 * 16, 15, "Couldn't initialize CD File System");
-         for (;;) {}
-      }
-
-      vdp_print_text(&main_font, 2 * 8, 6 * 16, 15, "Opening file...");
-      if ((cdfs_open (NULL, &file)) != IAPETUS_ERR_OK)
-      {
-         vdp_print_text(&main_font, 17 * 8, 6 * 16, 15, "Error.");
-         for (;;) {}
-      }
-      vdp_print_text(&main_font, 17 * 8, 6 * 16, 15, "Done.");
-      vdp_vsync();
-
-      //   vdp_printf(&mainfont, 2 * 8, 4 * 16, 15, "dirtbl = %02X %02X %02X %02X", dirtbl[0], dirtbl[1], dirtbl[2], dirtbl[3]);
-      //   vdp_printf(&mainfont, 2 * 8, 5 * 16, 15, "lba = %d", file.lba);
-
-      vdp_print_text(&main_font, 2 * 8, 7 * 16, 15, "Reading file...");
-      if (cdfs_read((void *)start_addr, 1, file.size, &file) != IAPETUS_ERR_OK)
-      {
-         vdp_print_text(&main_font, 17 * 8, 7 * 16, 15, "Error.");
-         for (;;) {}
-      }
-      vdp_print_text(&main_font, 17 * 8, 7 * 16, 15, "Done.");
-      vdp_vsync();
-
-      //   vdp_printf(&mainfont, 2 * 8, 8 * 16, 15, "Start Address: %08X(%08X)", startaddr, *((u32 *)startaddr));
-
-#ifdef ENABLE_DEBUG
-      // Delay for 3 seconds in case a button is hit
-      vdp_print_text(&main_font, 2 * 8, 9 * 16, 15, "Starting game in X second(s)");
-      vdp_print_text(&main_font, 2 * 8, 10 * 16, 15, "Hit X to enable debugger");
-      vdp_print_text(&main_font, 19 * 8, 9 * 16, 0, "X");
-      for (i = 3; i > 0; i--)
-      {
-         vdp_printf(&main_font, 19 * 8, 9 * 16, 15, "%d", i);
-
-         for (i2 = 0; i2 < 60; i2++)
-         {
-            vdp_vsync();
-            if (per[0].but_push_once & PAD_X)
-            {
-               // Enable Debugger
-               debugger_start();
-            }
-         }
-         vdp_printf(&main_font, 19 * 8, 9 * 16, 0, "%d", i);
-      }
-#endif
-
-      // Execute ip code
-      ipprog();
-   }
-   else
-   {
-      // Load code, etc. to hwram and execute
-      load_exec_binary(cdload, cdload_size, 0x06082000);
-   }
-}
-
-//////////////////////////////////////////////////////////////////////////////
-
 int cd_set_sector_size(int size);
 
 int cd_move_sector_data_cd_auth(u8 dst_filter, u16 sector_pos, u8 sel_num, u16 num_sectors)
@@ -241,11 +157,20 @@ int jhl_cd_hack()
 
 //////////////////////////////////////////////////////////////////////////////
 
+BOOL is_audio_cd()
+{
+   u32 toc[102];
+
+   // Check TOC
+   cd_get_toc(toc);
+
+   vdp_printf(&main_font, 2 * 8, 5 * 8, 15, "%08X -> %02X -> %d", toc[0], ((toc[0] & 0xFF000000) >> 24),(((toc[0] & 0xFF000000) >> 24) == 0x01) ? TRUE : FALSE );
+   return (((toc[0] & 0xFF000000) >> 24) == 0x01) ? TRUE : FALSE;
+}
+
 void start_game()
 {
    int stage=1;
-   u32 start_addr=0;
-   u32 ip_size=0;
    BOOL mpeg_exist;
 
    commlink_stop_service();
@@ -279,6 +204,13 @@ void start_game()
             if (is_cd_present())
             {
                vdp_printf(&main_font, 2 * 8, 4 * 8, 15, "Loading Disc...   ");
+
+               if (is_audio_cd())
+               {
+                  vdp_printf(&main_font, 2 * 8, 4 * 8, 15, "Found Audio Disc");
+                  bios_run_cd_player();
+               }
+
                // continue onto stage 2
                stage = 2;
             }
@@ -292,7 +224,7 @@ void start_game()
          }
          case 2:
          {
-            // Stage 2: Check if CD Block is locked, and unlock if neccessary
+            // Stage 2: Check if CD Block is locked, and unlock if necessary
             u16 disc_type;
 
             if (!is_cd_auth(&disc_type))
@@ -310,83 +242,10 @@ void start_game()
             else
                stage = 3;
 
-            // try BIOS-based boot first
+            // try BIOS-based boot
             jhload();
-
-            break;
-         }
-         case 3:
-         {
-            // Stage 3: Read first 16 sectors of disc
-            if ((cd_read_sector(sect_buffer, 150, SECT_2048, 16 * 2048)) == 0)
-            {
-               // continue onto stage 4
-               stage = 4;
-            }
-            else
-            {
-               vdp_printf(&main_font, 2 * 8, 4 * 8, 15, "Failed reading IP");
-               stage = 0;
-            }
- 
-            break;
-         }
-         case 4:
-         {
-            // Stage 4: Verify ip header and process ip
-            if (strncmp((char *)sect_buffer, "SEGA SEGASATURN ", 16) == 0)
-            {
-               // Horray! We can boot it!
-               vdp_printf(&main_font, 2 * 8, 4 * 8, 15, "Detected real saturn disc");
-               stage = 5;
-            }
-            else if (strncmp((char *)sect_buffer, "PSEUDO SATURN   ", 16) == 0)
-            {
-               // Horray! We can boot it!
-               vdp_printf(&main_font, 2 * 8, 4 * 8, 15, "Detected pseudo saturn disc");
-               stage = 5;
-            }
-            else
-            {
-               // Treat it like a VCD/Photo CD and try running the vcd player
-               if (mpeg_exist)
-               {
-#ifdef ENABLE_DEBUG
-	               debugger_start();
-#endif
-                  vdp_printf(&main_font, 2 * 8 , 21 * 8, 15, "Loading Potential VCD");
-                  bios_get_mpeg_rom(0, 128, (u32)sect_buffer);
-                  vdp_printf(&main_font, 2 * 8 , 22 * 8, 15, "Fetched ROM");
-						
-                  ip_size = *((u32 *)(sect_buffer+0xE0));
-                  vdp_printf(&main_font, 2 * 8 , 23 * 8, 15, "IP Size = %08X", ip_size);
-                  memcpy((void *)0x20200000, sect_buffer+ip_size, (128*2048)-ip_size);
-                  ipprog();
-               }
-					else
-					{
-						vdp_printf(&main_font, 2 * 8, 4 * 8, 15, "Unrecognized cd");
-						vdp_printf(&main_font, 2 * 8 , 5 * 8, 15, "%02X %02X %02X %02X %02X", sect_buffer[0], sect_buffer[1], sect_buffer[2], sect_buffer[3], sect_buffer[4]);
-						stage = 0;
-						for (;;)
-						{
-							vdp_vsync();
-							if (per[0].but_push_once & PAD_A)
-								return;
-						}
-					}
-            }
-
-            break;
-         }
-         case 5:
-         {
-            // Read First Program
-            start_addr = *((u32 *)(sect_buffer+0xF0));
-            ip_size =    *((u32 *)(sect_buffer+0xE0));
-
-            load_and_start(start_addr, ip_size);
-            return;
+          
+	    return;
          }
          default: break;
       }
@@ -582,8 +441,8 @@ done:
 
 void credits()
 {
-   vdp_printf(&main_font, 8, 8, 0xF, "Copyright 2011-2014 Cyber Warrior X");
-   vdp_printf(&main_font, 8, 2 * 8, 15, "http://www.cyberwarriorx.com");
+   vdp_printf(&main_font, 8, 8, 0xF, "Copyright 2011-2014 Pseudo Saturn Team");
+   vdp_printf(&main_font, 8, 2 * 8, 15, "http://github.com/cyberwarriorx/pseudosaturn");
    vdp_printf(&main_font, 8, 10 * 8, 15, "Press any button to go back");
 
    for (;;)        

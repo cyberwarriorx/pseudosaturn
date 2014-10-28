@@ -2,10 +2,13 @@ project(PseudoSaturn)
 
 enable_language(ASM)
 set(PseudoSaturn_SOURCES
-	shared/crt0.s
-	cdload.c
+	crt0.s
 	jhloader.c
 	main.c)
+
+if (PS_WANT_DEBUG)
+	set_source_files_properties(crt0.s PROPERTIES COMPILE_FLAGS "-Wa,--defsym,ENABLE_DEBUG=1")
+endif()
 
 if (PS_WANT_CHEATS)
     set(PseudoSaturn_SOURCES ${PseudoSaturn_SOURCES}
@@ -15,12 +18,14 @@ if (PS_WANT_CHEATS)
 endif()
 
 set(CMAKE_C_FLAGS "-O2 -Wall -m2")
-set(CMAKE_EXE_LINKER_FLAGS "-nostartfiles -Wl,--script,${CMAKE_SOURCE_DIR}/src/shared/bart.lk")
+if (PS_WANT_DEBUG)
+    set(CMAKE_EXE_LINKER_FLAGS "-nostartfiles -Wl,--script,${CMAKE_SOURCE_DIR}/src/debug.lk")
+else()
+    set(CMAKE_EXE_LINKER_FLAGS "-nostartfiles -Wl,--script,${CMAKE_SOURCE_DIR}/src/bart.lk")
+endif()
 set(CMAKE_EXECUTABLE_SUFFIX ".elf")
 
 add_definitions(-DPSEUDOSATURN_VERSION=\"${PSEUDOSATURN_VERSION}\")
-
-set_source_files_properties(cdload.c PROPERTIES OBJECT_DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/cdload/cdload.bin)
 
 add_custom_command(OUTPUT ${CMAKE_SOURCE_DIR}/src/codes.c
 	DEPENDS codes.bin

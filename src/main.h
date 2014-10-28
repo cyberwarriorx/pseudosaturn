@@ -20,6 +20,7 @@
 #ifndef MAIN_H
 #define MAIN_H
 
+extern u32 ip_ptr;
 void ipprog(void);
 
 void start_game();

@@ -251,8 +251,8 @@ void install_ps_commlink()
 
 void credits()
 {
-	vdp_printf(&main_font, 8, 8, 0xF, "Copyright 2014 Cyber Warrior X");
-	vdp_printf(&main_font, 8, 2 * 8, 15, "http://www.cyberwarriorx.com");
+	vdp_printf(&main_font, 8, 8, 0xF, "Copyright 2014 Pseudo Saturn Team");
+	vdp_printf(&main_font, 8, 2 * 8, 15, "http://github.com/cyberwarriorx/pseudosaturn");
 	vdp_printf(&main_font, 8, 10 * 8, 15, "Press any button to go back");
 
 	for (;;)        

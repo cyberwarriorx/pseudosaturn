@@ -1,3 +1,7 @@
+0.831 -> 0.832
+ firmware/installer:
+  - Added new cd loader by jhl based on bios. Should have higher compatibility.
+
 0.830 -> 0.831
  firmware/installer:
   - Added new exploit discovered by jhl. Custom discs are no longer required.
