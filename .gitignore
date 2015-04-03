@@ -37,3 +37,4 @@ Makefile
 /src/installer/installer.bin
 /src/installer/installer.elf
 /src/installer/installer.iso
+/releases
