@@ -29,10 +29,6 @@
 #include "cdload.h"
 #include "main.h"
 
-#define CD_WORKBUF 0x202C0000
-
-u8 *sect_buffer = (u8 *)0x26002000;
-
 #ifdef ENABLE_CHEATS
 #define ROM_CHEAT_LIST 0x02020000
 #define CHEAT_LIST 0x00200000
@@ -274,15 +270,15 @@ void select_cheats()
 
 //////////////////////////////////////////////////////////////////////////////
 
-u16 wait_for_press()
-{
+u16 wait_for_press(u16 mask)
+{	
 	for (;;)        
 	{
 		vdp_vsync(); 
-		if (per[0].but_push_once)
+		if (per[0].but_push_once & mask)
 			break;
 	}
-	return per[0].but_push_once;
+	return per[0].but_push_once & mask;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -302,7 +298,7 @@ BOOL ar_handle_detect_error(int err)
 	ar_get_product_id(&vendor_id, &device_id);
 	vdp_printf(&main_font, 8, 16, 0xF, "HW ID: %04X %04X", vendor_id, device_id);
 
-	press=wait_for_press();
+	press=wait_for_press(-1);
 
 	if (err != IAPETUS_ERR_UNSUPPORTED)
 		return FALSE;
@@ -347,14 +343,8 @@ start:
 
       commlink_start_service();
 
-      for (;;)        
-      {
-         vdp_vsync(); 
-         if (per[0].but_push_once & PAD_A)
-            break;
-         else if (per[0].but_push_once & PAD_X)
-            return;
-      }
+		if (wait_for_press(PAD_A | PAD_X) & PAD_X)
+			return;
 
       commlink_stop_service();
 
@@ -363,15 +353,9 @@ start:
          vdp_printf(&main_font, 8, 7 * 8, 0xF, "Invalid or no ROM uploaded.");
          vdp_printf(&main_font, 8, 8 * 8, 0xF, "Press 'A' to try again.");
 
-         for (;;)        
-         {
-            vdp_vsync(); 
-            if (per[0].but_push_once & PAD_A)
-            {
-               vdp_clear_screen(&main_font);
-               goto start;
-            }
-         }
+			wait_for_press(PAD_A);
+			vdp_clear_screen(&main_font);
+			goto start;
       }
 
       vdp_printf(&main_font, 8, 7 * 8, 0xF, "WARNING: Rewriting the flash may damage");
@@ -417,31 +401,21 @@ start:
       vdp_printf(&main_font, 8, 15 * 8, 0xF, "Failed flashing AR. Press a 'A' to");
       vdp_printf(&main_font, 8, 16 * 8, 0xF, "retry or 'X' to exit");
 
-      for (;;)        
-      {
-         vdp_vsync(); 
-         if (per[0].but_push_once & PAD_A)
-            break;
-         else if (per[0].but_push_once & PAD_X)
-            return;
-      }
+		if (wait_for_press(PAD_A | PAD_X) & PAD_X)
+			return;
+
       vdp_clear_screen(&main_font);
    }
 
 done:
-   for (;;)        
-   {
-      vdp_vsync(); 
-      if (per[0].but_push_once & PAD_A)
-         break;
-   }
+	wait_for_press(PAD_A);
 }
 
 //////////////////////////////////////////////////////////////////////////////
 
 void credits()
 {
-   vdp_printf(&main_font, 8, 8, 0xF, "Copyright 2011-2014 Pseudo Saturn Team");
+   vdp_printf(&main_font, 8, 8, 0xF, "Copyright 2011-2015 Pseudo Saturn Team");
    vdp_printf(&main_font, 8, 2 * 8, 15, "http://github.com/cyberwarriorx/pseudosaturn");
    vdp_printf(&main_font, 8, 10 * 8, 15, "Press any button to go back");
 
@@ -478,13 +452,16 @@ void ps_init()
 	// Use the default palette
 	vdp_set_default_palette();
 
-	// Setup the default 8x16 1BPP font
+	// Setup the default 8x8 1BPP font
 	main_font.data = font_8x8;
 	main_font.width = 8;
 	main_font.height = 8;
 	main_font.bpp = 1;
 	main_font.out = (u8 *)0x25E00000;
 	vdp_set_font(SCREEN_RBG0, &main_font, 1);
+	con_init(&main_font, 0, 0, 320, 224);
+
+	do_logo();
 
 	// Display everything
 	vdp_disp_on();

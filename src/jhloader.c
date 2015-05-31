@@ -17,19 +17,26 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+#include <stdio.h>
 #include <string.h>
+#include <stdarg.h>
 #include <iapetus.h>
 
 extern font_struct main_font;
 
 static int emulate_bios_loadcd_init(void) {
+	int ret;
    *(uint32_t*)0x6000278 = 0;
    *(uint32_t*)0x600027c = 0;
-   cd_abort_file();
-   cd_end_transfer();
-   cd_reset_selector_all();
-   cd_set_sector_size(SECT_2048);
-   return 0;
+   if ((ret = cd_abort_file()) != IAPETUS_ERR_OK)
+		return ret;
+   if ((ret = cd_end_transfer()) != IAPETUS_ERR_OK)
+		return ret;
+   if ((ret = cd_reset_selector_all()) != IAPETUS_ERR_OK)
+		return ret;
+   if ((ret = cd_set_sector_size(SECT_2048)) != IAPETUS_ERR_OK)
+		return ret;
+   return IAPETUS_ERR_OK;
 }
 
 static struct region_s {
@@ -118,6 +125,23 @@ static int emulate_bios_loadcd_read(void)
    return 0;
 }
 
+void doerror(int x, int y, int color, char *format, ...)
+{
+	char string[256];
+	va_list arg;
+
+	va_start(arg, format);
+	vsprintf(string, format, arg);
+	vdp_print_text(&main_font, x, y, color, string);
+	va_end(arg);
+
+	for (;;)
+	{
+		vdp_vsync();
+		if (per[0].but_push_once & PAD_A)
+			return;
+	}
+}
 
 void jhload(void)
 {
@@ -125,16 +149,16 @@ void jhload(void)
    vdp_print_text(&main_font, 2 * 8, 6 * 16, 15, "Initialising CD block...");
    if ((ret = emulate_bios_loadcd_init()) < 0)
    {
-      vdp_printf(&main_font, 25 * 8, 6 * 16, 15, "Error %d.", ret);
-      for (;;) {}
+		doerror(25 * 8, 6 * 16, 15, "Error %d.", ret);
+		return;
    }
    vdp_print_text(&main_font, 25 * 8, 6 * 16, 15, "Done.");
 
    vdp_print_text(&main_font, 2 * 8, 7 * 16, 15, "Reading CD data...");
    if ((ret = emulate_bios_loadcd_read()) < 0)
    {
-      vdp_printf(&main_font, 19 * 8, 7 * 16, 15, "Error %d.", ret);
-      for (;;) {}
+		doerror(19 * 8, 7 * 16, 15, "Error %d.", ret);
+		return;
    }
    vdp_print_text(&main_font, 19 * 8, 7 * 16, 15, "Done.");
 
@@ -145,11 +169,5 @@ void jhload(void)
    // error -8: bad region
    // error -4: bad security code
    // error -1: bad headers
-   vdp_printf(&main_font, 19 * 8, 8 * 16, 15, "Error %d.", ret);
-   for (;;)
-   {
-      vdp_vsync();
-      if (per[0].but_push_once & PAD_A)
-         return;
-   }
+	doerror(19 * 8, 8 * 16, 15, "Error %d.", ret);
 }

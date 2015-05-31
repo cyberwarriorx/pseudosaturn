@@ -1,10 +1,13 @@
 project(PseudoSaturn)
 
 enable_language(ASM)
+
 set(PseudoSaturn_SOURCES
 	crt0.s
 	jhloader.c
-	main.c)
+	main.c
+    img.c
+    logo.c)
 
 if (PS_WANT_DEBUG)
 	set_source_files_properties(crt0.s PROPERTIES COMPILE_FLAGS "-Wa,--defsym,ENABLE_DEBUG=1")
@@ -26,6 +29,8 @@ endif()
 set(CMAKE_EXECUTABLE_SUFFIX ".elf")
 
 add_definitions(-DPSEUDOSATURN_VERSION=\"${PSEUDOSATURN_VERSION}\")
+add_definitions(-DREENTRANT_SYSCALLS_PROVIDED)
+add_definitions(-DMISSING_SYSCALL_NAMES)
 
 add_custom_command(OUTPUT ${CMAKE_SOURCE_DIR}/src/codes.c
 	DEPENDS codes.bin
@@ -55,6 +60,13 @@ add_custom_command(TARGET ${PROJECT_NAME}
 	COMMAND ${CMAKE_BIN2C} 
 	ARGS ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.BIN ${CMAKE_SOURCE_DIR}/src/installer/ps_rom.c ps_rom
 	COMMENT "Generating source file out of PS.bin")
+
+add_custom_command(OUTPUT ${CMAKE_SOURCE_DIR}/src/logo.c
+	DEPENDS ${CMAKE_SOURCE_DIR}/src/pseudo_02_8.pcx
+	COMMAND ${CMAKE_BIN2C} 
+	ARGS ${CMAKE_SOURCE_DIR}/src/pseudo_02_8.pcx ${CMAKE_SOURCE_DIR}/src/logo.c logo
+	COMMENT "Generating source file out of pseudo_02_8.pcx")
+
 
 add_subdirectory(installer)
 

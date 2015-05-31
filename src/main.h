@@ -31,4 +31,6 @@ void credits();
 
 extern font_struct main_font;
 
+u16 wait_for_press(u16 mask);
+
 #endif
