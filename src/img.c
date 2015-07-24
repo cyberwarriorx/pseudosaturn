@@ -50,8 +50,8 @@ void do_logo()
 	}
 
 	// Make sure we're faded out
-	vdp_fade_out(SCREEN_RBG0, 0, 255);
 	vdp_disp_on();
+	vdp_fade_out(SCREEN_RBG0, 0, 255);
 	for (i = 0; i < img.height; i++)
 	   memcpy((void *)0x25E00000+(i*512), img.data+(i*img.width), img.width);
 	j=8*10;
