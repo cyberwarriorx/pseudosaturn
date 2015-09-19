@@ -1,8 +1,13 @@
+PseudoSaturn v0.832 FINAL
+-------------------------
+
 Introduction
 ------------
 This code was designed as a proof of concept for running Saturn code from cd's without requiring special mastering hardware. It was the product of several months of studying the process by which the cd block authenticates a disc and unlocks functionality.
 
 The code for booting unmodified Saturn disc images came from jhl's research and algorithm. I can only claim the work of the actual implementation of it in Pseudo Saturn.
+
+This is the last official release of PseudoSaturn. Anyone is welcome to fork and update as they like so long as they follow the license terms: https://github.com/cyberwarriorx/pseudosaturn
 
 Dependencies
 ------------
@@ -46,7 +51,7 @@ Usage Instruction
 
 Todo List
 ---------
-There's a few things I really want to add at some point given the time:
+There's a few things I really wanted to add at some point given the time. I'm leaving this here for others to consider taking up:
 -Clean up code and improve build setup.
 -Cheats support like stock Action Replay software
 -Saves support of some sort like stock action replay. Ideally I'd like to hook into the bios's save functions so it can save directly to the cart.
@@ -62,15 +67,15 @@ Thanks to my buds on #yabause, rhdn, and assemblergames
 -Charles MacDonald
 -esperknight
 -Guill
--jhl
+-jhl(contributed the better exploit and current cd loader code)
 -pinchy
 -SamIAm
 -SaturnAR
 -tehcloud
 -WhiteSnake
+-vbt
 -zorlon
 
 The "Screw you" list(by request)
 --------------------------------
 -KrossX
--vbt

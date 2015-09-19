@@ -1,6 +1,7 @@
 0.831 -> 0.832
  firmware/installer:
   - Added new cd loader by jhl based on bios. Should have higher compatibility.
+  - Added a fantastic new logo by alien. 
 
 0.830 -> 0.831
  firmware/installer:
