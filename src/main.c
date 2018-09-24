@@ -459,7 +459,7 @@ void ps_init()
 	main_font.bpp = 1;
 	main_font.out = (u8 *)0x25E00000;
 	vdp_set_font(SCREEN_RBG0, &main_font, 1);
-	con_init(&main_font, 0, 0, 320, 224);
+	//con_init(&main_font, 0, 0, 320, 224);
 
 	do_logo();
 
